@@ -1,0 +1,42 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Town {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  sectors   Sector[]
+  customers Customer[]
+  createdAt DateTime   @default(now())
+}
+
+model Sector {
+  id        String     @id @default(uuid())
+  name      String
+  townId    String
+  town      Town       @relation(fields: [townId], references: [id], onDelete: Cascade)
+  customers Customer[]
+  createdAt DateTime   @default(now())
+
+  @@unique([name, townId])
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String
+  address   String
+  townId    String
+  sectorId  String
+  town      Town     @relation(fields: [townId], references: [id])
+  sector    Sector   @relation(fields: [sectorId], references: [id])
+  createdAt DateTime @default(now())
+}
