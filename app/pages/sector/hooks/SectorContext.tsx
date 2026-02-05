@@ -4,6 +4,8 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { getSector } from "@/app/pages/sector/actions/getSector"
 import { getSectorsCount } from "@/app/pages/sector/actions/getSectorCount"
 import { createSector } from "@/app/pages/sector/actions/createSector"
+import { updateSector } from "@/app/pages/sector/actions/updateSector"
+import { deleteSector } from "@/app/pages/sector/actions/deleteSector"
 
 type Town = {
     id: string
@@ -24,15 +26,17 @@ type SectorContextType = {
     sectorsCount: number
     towns: Town[]
     addSector: (name: string, townId: string) => Promise<{ success: boolean; error?: string }>
+    editSector: (id: string, name: string, townId: string) => Promise<{ success: boolean; error?: string }>
+    removeSector: (id: string) => Promise<{ success: boolean; error?: string }>
     refreshSectors: () => Promise<void>
 }
 
 const SectorContext = createContext<SectorContextType | undefined>(undefined)
 
 export function SectorProvider({
-   children,
-   initialTowns = []
-}: {
+                                   children,
+                                   initialTowns = []
+                               }: {
     children: ReactNode
     initialTowns?: Town[]
 }) {
@@ -65,6 +69,24 @@ export function SectorProvider({
         return result
     }
 
+    const editSector = async (id: string, name: string, townId: string) => {
+        const result = await updateSector(id, { name, townId })
+        if (result.success) {
+            await fetchSectors()
+            await fetchSectorsCount()
+        }
+        return result
+    }
+
+    const removeSector = async (id: string) => {
+        const result = await deleteSector(id)
+        if (result.success) {
+            await fetchSectors()
+            await fetchSectorsCount()
+        }
+        return result
+    }
+
     const refreshSectors = async () => {
         await fetchSectors()
         await fetchSectorsCount()
@@ -81,8 +103,10 @@ export function SectorProvider({
                 sectors,
                 loading,
                 sectorsCount,
-                towns:initialTowns,
+                towns: initialTowns,
                 addSector,
+                editSector,
+                removeSector,
                 refreshSectors,
             }}
         >

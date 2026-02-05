@@ -11,13 +11,15 @@ type SectorTableRow = {
     id: string
     name: string
     belongsTo: string
+    townId: string
     status: "ACTIVE" | "INACTIVE"
     createdAt: string
 }
 
 export default function SectorPage() {
-    const { sectors, loading, addSector, sectorsCount, towns } = useSectorContext()
+    const { sectors, loading, addSector, editSector, removeSector, sectorsCount, towns } = useSectorContext()
     const [showForm, setShowForm] = useState(false)
+    const [editingSector, setEditingSector] = useState<{ id: string; name: string; townId: string } | null>(null)
     const [filterText, setFilterText] = useState("")
     const [currentPage, setCurrentPage] = useState(1)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -42,16 +44,40 @@ export default function SectorPage() {
 
     const handleSave = async (name: string, townId: string) => {
         setIsSubmitting(true)
-        const result = await addSector(name, townId)
+        let result
+
+        if (editingSector) {
+            result = await editSector(editingSector.id, name, townId)
+        } else {
+            result = await addSector(name, townId)
+        }
+
         setIsSubmitting(false)
 
         if (result.success) {
             setShowForm(false)
+            setEditingSector(null)
         }
     }
 
     const handleCancel = () => {
         setShowForm(false)
+        setEditingSector(null)
+    }
+
+    const handleEdit = (sector: SectorTableRow) => {
+        setEditingSector({
+            id: sector.id,
+            name: sector.name,
+            townId: sector.townId
+        })
+        setShowForm(true)
+    }
+
+    const handleDelete = async (id: string) => {
+        if (confirm("Are you sure you want to delete this sector?")) {
+            await removeSector(id)
+        }
     }
 
     const columns: Column<SectorTableRow>[] = [
@@ -73,12 +99,33 @@ export default function SectorPage() {
             ),
         },
         { key: "createdAt", label: "Created At" },
+        {
+            key: "id",
+            label: "Actions",
+            render: (_, row) => (
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => handleEdit(row)}
+                        className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800"
+                    >
+                        Edit
+                    </button>
+                    <button
+                        onClick={() => handleDelete(row.id)}
+                        className="px-3 py-1 text-sm text-red-600 hover:text-red-800"
+                    >
+                        Delete
+                    </button>
+                </div>
+            ),
+        },
     ]
 
     const tableData: SectorTableRow[] = paginatedSectors.map((sector) => ({
         id: sector.id,
         name: sector.name,
         belongsTo: sector.town?.name || "N/A",
+        townId: sector.townId,
         status: "ACTIVE" as const,
         createdAt: new Date(sector.createdAt).toLocaleDateString("en-US", {
             weekday: "short",
@@ -104,8 +151,11 @@ export default function SectorPage() {
 
                     {!showForm && (
                         <Button
-                            onClick={() => setShowForm(true)}
-                            className="bg-transparent"
+                            onClick={() => {
+                                setEditingSector(null)
+                                setShowForm(true)
+                            }}
+                            className="bg-black text-white"
                         >
                             + Add Sector
                         </Button>
@@ -118,6 +168,7 @@ export default function SectorPage() {
                         onCancel={handleCancel}
                         isLoading={isSubmitting}
                         towns={towns}
+                        initialData={editingSector}
                     />
                 )}
             </div>

@@ -18,64 +18,72 @@ interface CustomerFormProps {
     isLoading?: boolean
     towns: Array<{ id: string; name: string }>
     sectors: Array<{ id: string; name: string; townId: string }>
+    initialData?: {
+        id: string
+        name: string
+        email: string
+        townId: string
+        sectorId: string
+        address: string
+        phone_number: string
+        vendor: boolean
+    } | null
+    onTownChange: (townId: string) => Promise<void>
 }
 
 export default function CustomerForm({
-    onSave,
-    onCancel,
-    isLoading = false,
-    towns,
-    sectors
-}: CustomerFormProps) {
+                                         onSave,
+                                         onCancel,
+                                         isLoading = false,
+                                         towns,
+                                         sectors,
+                                         initialData = null,
+                                         onTownChange
+                                     }: CustomerFormProps) {
     const [formData, setFormData] = useState({
         name: "",
         email: "",
-        phone_number: "",
-        address: "",
         townId: "",
         sectorId: "",
+        address: "",
+        phone_number: "",
         vendor: false
     })
 
     const [filteredSectors, setFilteredSectors] = useState(sectors)
 
     useEffect(() => {
+        if (initialData) {
+            setFormData({
+                name: initialData.name,
+                email: initialData.email,
+                townId: initialData.townId,
+                sectorId: initialData.sectorId,
+                address: initialData.address,
+                phone_number: initialData.phone_number,
+                vendor: initialData.vendor
+            })
+        }
+    }, [initialData])
+
+    useEffect(() => {
         if (formData.townId) {
-            setFilteredSectors(sectors.filter(s => s.townId === formData.townId))
-            // Reset sector if it doesn't belong to selected town
-            if (formData.sectorId) {
-                const sectorBelongsToTown = sectors.find(
-                    s => s.id === formData.sectorId && s.townId === formData.townId
-                )
-                if (!sectorBelongsToTown) {
-                    setFormData(prev => ({ ...prev, sectorId: "" }))
-                }
-            }
+            const filtered = sectors.filter(s => s.townId === formData.townId)
+            setFilteredSectors(filtered)
         } else {
             setFilteredSectors(sectors)
         }
     }, [formData.townId, sectors])
 
+    const handleTownChange = async (townId: string) => {
+        setFormData(prev => ({ ...prev, townId, sectorId: "" }))
+        await onTownChange(townId)
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (
-            formData.name.trim() &&
-            formData.email.trim() &&
-            formData.phone_number.trim() &&
-            formData.address.trim() &&
-            formData.townId &&
-            formData.sectorId
-        ) {
+        if (formData.name.trim() && formData.email.trim() && formData.townId && formData.sectorId) {
             await onSave(formData)
-            setFormData({
-                name: "",
-                email: "",
-                phone_number: "",
-                address: "",
-                townId: "",
-                sectorId: "",
-                vendor: false
-            })
         }
     }
 
@@ -100,7 +108,7 @@ export default function CustomerForm({
                         <input
                             type="text"
                             value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                             placeholder="Enter Customer Name"
                             className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
                             disabled={isLoading}
@@ -114,7 +122,7 @@ export default function CustomerForm({
                         <input
                             type="email"
                             value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                             placeholder="Enter Email"
                             className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
                             disabled={isLoading}
@@ -128,7 +136,7 @@ export default function CustomerForm({
                         <input
                             type="tel"
                             value={formData.phone_number}
-                            onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                            onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
                             placeholder="Enter Phone Number"
                             className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
                             disabled={isLoading}
@@ -142,7 +150,7 @@ export default function CustomerForm({
                         <input
                             type="text"
                             value={formData.address}
-                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                            onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                             placeholder="Enter Address"
                             className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
                             disabled={isLoading}
@@ -157,7 +165,7 @@ export default function CustomerForm({
                             <Dropdown
                                 options={townOptions}
                                 value={formData.townId}
-                                onChange={(value) => setFormData({ ...formData, townId: value })}
+                                onChange={handleTownChange}
                                 placeholder="Select Town"
                             />
                         </div>
@@ -171,24 +179,24 @@ export default function CustomerForm({
                             <Dropdown
                                 options={sectorOptions}
                                 value={formData.sectorId}
-                                onChange={(value) => setFormData({ ...formData, sectorId: value })}
+                                onChange={(value) => setFormData(prev => ({ ...prev, sectorId: value }))}
                                 placeholder="Select Sector"
                             />
                         </div>
                     </div>
-                </div>
 
-                <div className="mb-4">
-                    <label className="flex items-center gap-2">
-                        <input
-                            type="checkbox"
-                            checked={formData.vendor}
-                            onChange={(e) => setFormData({ ...formData, vendor: e.target.checked })}
-                            className="w-4 h-4"
-                            disabled={isLoading}
-                        />
-                        <span className="text-sm font-medium">Is Vendor</span>
-                    </label>
+                    <div className="col-span-2">
+                        <label className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                checked={formData.vendor}
+                                onChange={(e) => setFormData(prev => ({ ...prev, vendor: e.target.checked }))}
+                                className="w-4 h-4 rounded border-gray-300"
+                                disabled={isLoading}
+                            />
+                            <span className="text-sm font-medium">Is Vendor</span>
+                        </label>
+                    </div>
                 </div>
 
                 <div className="flex justify-end gap-3">
@@ -203,7 +211,7 @@ export default function CustomerForm({
                         type="submit"
                         className="bg-black text-white hover:bg-gray-800 disabled:opacity-50"
                     >
-                        {isLoading ? "Saving..." : "Save"}
+                        {isLoading ? "Saving..." : initialData ? "Update" : "Save"}
                     </Button>
                 </div>
             </form>

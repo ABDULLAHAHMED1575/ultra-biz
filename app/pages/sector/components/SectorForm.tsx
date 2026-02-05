@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Button from "@/app/components/Button"
 import Dropdown from "@/app/components/Dropdown"
 
@@ -9,16 +9,25 @@ interface SectorFormProps {
     onCancel: () => void
     isLoading?: boolean
     towns: Array<{ id: string; name: string }>
+    initialData?: { id: string; name: string; townId: string } | null
 }
 
 export default function SectorForm({
-   onSave,
-   onCancel,
-   isLoading = false,
-   towns
-}: SectorFormProps) {
+                                       onSave,
+                                       onCancel,
+                                       isLoading = false,
+                                       towns,
+                                       initialData = null
+                                   }: SectorFormProps) {
     const [sectorName, setSectorName] = useState("")
     const [selectedTownId, setSelectedTownId] = useState("")
+
+    useEffect(() => {
+        if (initialData) {
+            setSectorName(initialData.name)
+            setSelectedTownId(initialData.townId)
+        }
+    }, [initialData])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -79,7 +88,7 @@ export default function SectorForm({
                         type="submit"
                         className="bg-black text-white hover:bg-gray-800 disabled:opacity-50"
                     >
-                        {isLoading ? "Saving..." : "Save"}
+                        {isLoading ? "Saving..." : initialData ? "Update" : "Save"}
                     </Button>
                 </div>
             </form>

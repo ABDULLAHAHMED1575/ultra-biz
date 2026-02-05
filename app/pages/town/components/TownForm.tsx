@@ -1,17 +1,28 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Button from "@/app/components/Button"
 
 interface TownFormProps {
     onSave: (name: string) => Promise<void>
     onCancel: () => void
     isLoading?: boolean
+    initialData?: { id: string; name: string } | null
 }
 
-export default function TownForm({ onSave, onCancel, isLoading = false }: TownFormProps) {
+export default function TownForm({
+                                     onSave,
+                                     onCancel,
+                                     isLoading = false,
+                                     initialData = null
+                                 }: TownFormProps) {
     const [townName, setTownName] = useState("")
-    const [showSuggestions, setShowSuggestions] = useState(false)
+
+    useEffect(() => {
+        if (initialData) {
+            setTownName(initialData.name)
+        }
+    }, [initialData])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -32,12 +43,7 @@ export default function TownForm({ onSave, onCancel, isLoading = false }: TownFo
                         <input
                             type="text"
                             value={townName}
-                            onChange={(e) => {
-                                setTownName(e.target.value)
-                                setShowSuggestions(e.target.value.length > 0)
-                            }}
-                            onFocus={() => setShowSuggestions(townName.length > 0)}
-                            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                            onChange={(e) => setTownName(e.target.value)}
                             placeholder="Enter Town Name"
                             className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
                             disabled={isLoading}
@@ -49,15 +55,15 @@ export default function TownForm({ onSave, onCancel, isLoading = false }: TownFo
                     <Button
                         type="button"
                         onClick={onCancel}
-                        className=" border "
+                        className="border"
                     >
                         Cancel
                     </Button>
                     <Button
                         type="submit"
-                        className="hover:bg-gray-800 disabled:opacity-50"
+                        className="bg-black text-white hover:bg-gray-800 disabled:opacity-50"
                     >
-                        {isLoading ? "Saving..." : "Save"}
+                        {isLoading ? "Saving..." : initialData ? "Update" : "Save"}
                     </Button>
                 </div>
             </form>

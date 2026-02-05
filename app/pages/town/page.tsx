@@ -15,8 +15,9 @@ type TownTableRow = {
 }
 
 export default function TownPage() {
-    const { towns, loading, addTown, townsCount } = useTownContext()
+    const { towns, loading, addTown, editTown, removeTown, townsCount } = useTownContext()
     const [showForm, setShowForm] = useState(false)
+    const [editingTown, setEditingTown] = useState<{ id: string; name: string } | null>(null)
     const [filterText, setFilterText] = useState("")
     const [currentPage, setCurrentPage] = useState(1)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -37,23 +38,43 @@ export default function TownPage() {
 
     const from = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1
     const to = Math.min(currentPage * itemsPerPage, totalItems)
+
     const handleSave = async (name: string) => {
         setIsSubmitting(true)
-        const result = await addTown(name)
+        let result
+
+        if (editingTown) {
+            result = await editTown(editingTown.id, name)
+        } else {
+            result = await addTown(name)
+        }
+
         setIsSubmitting(false)
 
         if (result.success) {
             setShowForm(false)
+            setEditingTown(null)
         }
     }
 
     const handleCancel = () => {
         setShowForm(false)
+        setEditingTown(null)
+    }
+
+    const handleEdit = (town: TownTableRow) => {
+        setEditingTown({ id: town.id, name: town.name })
+        setShowForm(true)
+    }
+
+    const handleDelete = async (id: string) => {
+        if (confirm("Are you sure you want to delete this town?")) {
+            await removeTown(id)
+        }
     }
 
     const columns: Column<TownTableRow>[] = [
         { key: "name", label: "Name" },
-
         {
             key: "status",
             label: "Status",
@@ -65,13 +86,33 @@ export default function TownPage() {
                             : "text-red-700"
                     }`}
                 >
-          {value}
-        </span>
+                    {value}
+                </span>
             ),
         },
-
         { key: "createdAt", label: "Created At" },
+        {
+            key: "id",
+            label: "Actions",
+            render: (_, row) => (
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => handleEdit(row)}
+                        className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800"
+                    >
+                        Edit
+                    </button>
+                    <button
+                        onClick={() => handleDelete(row.id)}
+                        className="px-3 py-1 text-sm text-red-600 hover:text-red-800"
+                    >
+                        Delete
+                    </button>
+                </div>
+            ),
+        },
     ]
+
     const tableData: TownTableRow[] = paginatedTowns.map((town) => ({
         id: town.id,
         name: town.name,
@@ -99,7 +140,13 @@ export default function TownPage() {
                     />
 
                     {!showForm && (
-                        <Button onClick={() => setShowForm(true)}>
+                        <Button
+                            onClick={() => {
+                                setEditingTown(null)
+                                setShowForm(true)
+                            }}
+                            className="bg-black text-white"
+                        >
                             + Add Town
                         </Button>
                     )}
@@ -110,6 +157,7 @@ export default function TownPage() {
                         onSave={handleSave}
                         onCancel={handleCancel}
                         isLoading={isSubmitting}
+                        initialData={editingTown}
                     />
                 )}
             </div>
@@ -122,7 +170,7 @@ export default function TownPage() {
                 ) : (
                     <div>
                         <Table columns={columns} data={tableData}/>
-                        <p className="text-sm">
+                        <p className="text-sm mt-4">
                             Showing{" "}
                             <span className="font-medium">{from}</span>–
                             <span className="font-medium">{to}</span> of{" "}

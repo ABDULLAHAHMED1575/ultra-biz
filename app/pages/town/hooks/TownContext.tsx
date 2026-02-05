@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { getTown } from '@/app/pages/town/actions/getTown';
 import { getTownsCount } from '@/app/pages/town/actions/getTownCounts';
 import { createTown } from '@/app/pages/town/actions/createTown';
+import { updateTown } from '@/app/pages/town/actions/updateTown';
+import { deleteTown } from '@/app/pages/town/actions/deleteTown';
 
 interface Sector {
     id: string;
@@ -38,6 +40,8 @@ interface TownContextType {
     loading: boolean;
     error: string | null;
     addTown: (name: string) => Promise<{ success: boolean; error?: string }>;
+    editTown: (id: string, name: string) => Promise<{ success: boolean; error?: string }>;
+    removeTown: (id: string) => Promise<{ success: boolean; error?: string }>;
     refetch: () => Promise<void>;
 }
 
@@ -94,6 +98,36 @@ export const TownProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
+    const editTown = async (id: string, name: string) => {
+        try {
+            const result = await updateTown(id, { name });
+            if (result.success) {
+                await fetchTowns();
+                await fetchTownsCount();
+                return { success: true };
+            } else {
+                return { success: false, error: result.error || 'Failed to update town' };
+            }
+        } catch (err) {
+            return { success: false, error: 'An error occurred while updating town' };
+        }
+    };
+
+    const removeTown = async (id: string) => {
+        try {
+            const result = await deleteTown(id);
+            if (result.success) {
+                await fetchTowns();
+                await fetchTownsCount();
+                return { success: true };
+            } else {
+                return { success: false, error: result.error || 'Failed to delete town' };
+            }
+        } catch (err) {
+            return { success: false, error: 'An error occurred while deleting town' };
+        }
+    };
+
     useEffect(() => {
         fetchTowns();
         fetchTownsCount();
@@ -105,6 +139,8 @@ export const TownProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         loading,
         error,
         addTown,
+        editTown,
+        removeTown,
         refetch: fetchTowns,
     };
 
