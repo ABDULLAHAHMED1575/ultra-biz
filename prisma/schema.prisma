@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
   output   = "../app/generated/prisma"
@@ -9,9 +7,15 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
 model Town {
   id        String     @id @default(uuid())
   name      String     @unique
+  status    Status     @default(ACTIVE)
   sectors   Sector[]
   customers Customer[]
   createdAt DateTime   @default(now())
@@ -21,6 +25,7 @@ model Sector {
   id        String     @id @default(uuid())
   name      String
   townId    String
+  status    Status     @default(ACTIVE)
   town      Town       @relation(fields: [townId], references: [id], onDelete: Cascade)
   customers Customer[]
   createdAt DateTime   @default(now())
@@ -36,6 +41,7 @@ model Customer {
   address   String
   townId    String
   sectorId  String
+  vendor    Boolean  @default(false)
   town      Town     @relation(fields: [townId], references: [id])
   sector    Sector   @relation(fields: [sectorId], references: [id])
   createdAt DateTime @default(now())
