@@ -66,9 +66,9 @@ type CustomerContextType = {
 const CustomerContext = createContext<CustomerContextType | undefined>(undefined)
 
 export function CustomerProvider({
-                                     children,
-                                     initialTowns = []
-                                 }: {
+    children,
+    initialTowns = []
+}: {
     children: ReactNode
     initialTowns?: Town[]
 }) {

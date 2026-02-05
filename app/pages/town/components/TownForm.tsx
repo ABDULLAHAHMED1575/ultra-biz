@@ -11,11 +11,11 @@ interface TownFormProps {
 }
 
 export default function TownForm({
-                                     onSave,
-                                     onCancel,
-                                     isLoading = false,
-                                     initialData = null
-                                 }: TownFormProps) {
+    onSave,
+    onCancel,
+    isLoading = false,
+    initialData = null
+}: TownFormProps) {
     const [townName, setTownName] = useState("")
 
     useEffect(() => {

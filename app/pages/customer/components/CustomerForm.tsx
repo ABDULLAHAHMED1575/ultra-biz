@@ -32,14 +32,14 @@ interface CustomerFormProps {
 }
 
 export default function CustomerForm({
-                                         onSave,
-                                         onCancel,
-                                         isLoading = false,
-                                         towns,
-                                         sectors,
-                                         initialData = null,
-                                         onTownChange
-                                     }: CustomerFormProps) {
+    onSave,
+    onCancel,
+    isLoading = false,
+    towns,
+    sectors,
+    initialData = null,
+    onTownChange
+}: CustomerFormProps) {
     const [formData, setFormData] = useState({
         name: "",
         email: "",

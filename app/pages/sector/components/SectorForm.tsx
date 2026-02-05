@@ -13,12 +13,12 @@ interface SectorFormProps {
 }
 
 export default function SectorForm({
-                                       onSave,
-                                       onCancel,
-                                       isLoading = false,
-                                       towns,
-                                       initialData = null
-                                   }: SectorFormProps) {
+   onSave,
+   onCancel,
+   isLoading = false,
+   towns,
+   initialData = null
+}: SectorFormProps) {
     const [sectorName, setSectorName] = useState("")
     const [selectedTownId, setSelectedTownId] = useState("")
 

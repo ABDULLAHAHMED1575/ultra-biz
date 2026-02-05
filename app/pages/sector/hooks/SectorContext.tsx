@@ -34,9 +34,9 @@ type SectorContextType = {
 const SectorContext = createContext<SectorContextType | undefined>(undefined)
 
 export function SectorProvider({
-                                   children,
-                                   initialTowns = []
-                               }: {
+   children,
+   initialTowns = []
+}: {
     children: ReactNode
     initialTowns?: Town[]
 }) {
