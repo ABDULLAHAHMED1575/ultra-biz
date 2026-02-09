@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { getTown } from '@/app/pages/town/actions/getTown';
 import { getTownsCount } from '@/app/pages/town/actions/getTownCounts';
 import { createTown } from '@/app/pages/town/actions/createTown';
@@ -35,51 +35,39 @@ interface Town {
 }
 
 interface TownContextType {
-    towns: Town[];
-    townsCount: number;
-    loading: boolean;
-    error: string | null;
+    getTowns: () => Promise<Town[]>;
+    getTownCount: () => Promise<number>;
     addTown: (name: string) => Promise<{ success: boolean; error?: string }>;
     editTown: (id: string, name: string) => Promise<{ success: boolean; error?: string }>;
     removeTown: (id: string) => Promise<{ success: boolean; error?: string }>;
-    refetch: () => Promise<void>;
 }
 
 const TownContext = createContext<TownContextType | undefined>(undefined);
 
 export const TownProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [towns, setTowns] = useState<Town[]>([]);
-    const [townsCount, setTownsCount] = useState<number>(0);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
-
-    const fetchTowns = async () => {
-        setLoading(true);
-        setError(null);
+    const getTowns = async (): Promise<Town[]> => {
         try {
             const result = await getTown();
             if (result.success && result.data) {
-                setTowns(result.data as Town[]);
-            } else {
-                setError(result.message || 'Failed to fetch towns');
-                setTowns([]);
+                return result.data as Town[];
             }
+            return [];
         } catch (err) {
-            setError('An error occurred while fetching towns');
-            setTowns([]);
-        } finally {
-            setLoading(false);
+            console.error('Error fetching towns:', err);
+            return [];
         }
     };
 
-    const fetchTownsCount = async () => {
+    const getTownCount = async (): Promise<number> => {
         try {
             const result = await getTownsCount();
             if (result.success && result.data !== undefined) {
-                setTownsCount(result.data);
+                return result.data;
             }
+            return 0;
         } catch (err) {
-            console.error('Failed to fetch towns count');
+            console.error('Error fetching town count:', err);
+            return 0;
         }
     };
 
@@ -87,8 +75,6 @@ export const TownProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             const result = await createTown({ name });
             if (result.success) {
-                await fetchTowns();
-                await fetchTownsCount();
                 return { success: true };
             } else {
                 return { success: false, error: result.error || 'Failed to create town' };
@@ -102,8 +88,6 @@ export const TownProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             const result = await updateTown(id, { name });
             if (result.success) {
-                await fetchTowns();
-                await fetchTownsCount();
                 return { success: true };
             } else {
                 return { success: false, error: result.error || 'Failed to update town' };
@@ -117,8 +101,6 @@ export const TownProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             const result = await deleteTown(id);
             if (result.success) {
-                await fetchTowns();
-                await fetchTownsCount();
                 return { success: true };
             } else {
                 return { success: false, error: result.error || 'Failed to delete town' };
@@ -128,20 +110,12 @@ export const TownProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    useEffect(() => {
-        fetchTowns();
-        fetchTownsCount();
-    }, []);
-
     const value: TownContextType = {
-        towns,
-        townsCount,
-        loading,
-        error,
+        getTowns,
+        getTownCount,
         addTown,
         editTown,
         removeTown,
-        refetch: fetchTowns,
     };
 
     return <TownContext.Provider value={value}>{children}</TownContext.Provider>;

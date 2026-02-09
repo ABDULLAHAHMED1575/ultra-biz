@@ -1,51 +1,50 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { createSector } from "@/app/pages/sector/actions/createSector"
+import { updateSector } from "@/app/pages/sector/actions/updateSector"
 import Button from "@/app/components/Button"
-import Dropdown from "@/app/components/Dropdown"
+import { useRouter } from "next/navigation"
 
 interface SectorFormProps {
-    onSave: (name: string, townId: string) => Promise<void>
     onCancel: () => void
-    isLoading?: boolean
     towns: Array<{ id: string; name: string }>
     initialData?: { id: string; name: string; townId: string } | null
 }
 
 export default function SectorForm({
-   onSave,
    onCancel,
-   isLoading = false,
    towns,
    initialData = null
 }: SectorFormProps) {
-    const [sectorName, setSectorName] = useState("")
-    const [selectedTownId, setSelectedTownId] = useState("")
+    const router = useRouter()
 
-    useEffect(() => {
-        if (initialData) {
-            setSectorName(initialData.name)
-            setSelectedTownId(initialData.townId)
+    const handleSubmit = async (formData: FormData) => {
+        const name = formData.get("name") as string
+        const townId = formData.get("townId") as string
+
+        if (!name?.trim() || !townId) {
+            alert("Please fill in all fields")
+            return
         }
-    }, [initialData])
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (sectorName.trim() && selectedTownId) {
-            await onSave(sectorName.trim(), selectedTownId)
-            setSectorName("")
-            setSelectedTownId("")
+        let result
+        if (initialData) {
+            result = await updateSector(initialData.id, { name: name.trim(), townId })
+        } else {
+            result = await createSector({ name: name.trim(), townId })
+        }
+
+        if (result.success) {
+            router.refresh()
+            onCancel()
+        } else {
+            alert(result.error || "Failed to save sector")
         }
     }
 
-    const townOptions = towns.map(town => ({
-        label: town.name,
-        value: town.id
-    }))
-
     return (
         <div className="rounded-lg border p-6 mb-6">
-            <form onSubmit={handleSubmit}>
+            <form action={handleSubmit}>
                 <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
                         <label className="block text-sm font-medium mb-2">
@@ -53,11 +52,11 @@ export default function SectorForm({
                         </label>
                         <input
                             type="text"
-                            value={sectorName}
-                            onChange={(e) => setSectorName(e.target.value)}
+                            name="name"
+                            defaultValue={initialData?.name || ""}
                             placeholder="Enter Sector Name"
                             className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
-                            disabled={isLoading}
+                            required
                         />
                     </div>
 
@@ -65,14 +64,19 @@ export default function SectorForm({
                         <label className="block text-sm font-medium mb-2">
                             Town
                         </label>
-                        <div className="w-full px-4 py-2 border rounded-md focus-within:outline-none focus-within:ring-2 focus-within:ring-gray-900">
-                            <Dropdown
-                                options={townOptions}
-                                value={selectedTownId}
-                                onChange={setSelectedTownId}
-                                placeholder="Select Town"
-                            />
-                        </div>
+                        <select
+                            name="townId"
+                            defaultValue={initialData?.townId || ""}
+                            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
+                            required
+                        >
+                            <option value="">Select Town</option>
+                            {towns.map((town) => (
+                                <option key={town.id} value={town.id}>
+                                    {town.name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                 </div>
 
@@ -86,9 +90,9 @@ export default function SectorForm({
                     </Button>
                     <Button
                         type="submit"
-                        className="bg-black text-white hover:bg-gray-800 disabled:opacity-50"
+                        className="bg-black text-white hover:bg-gray-800"
                     >
-                        {isLoading ? "Saving..." : initialData ? "Update" : "Save"}
+                        {initialData ? "Update" : "Save"}
                     </Button>
                 </div>
             </form>

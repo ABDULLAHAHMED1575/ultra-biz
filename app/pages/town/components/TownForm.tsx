@@ -1,34 +1,25 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import Button from "@/app/components/Button"
 
 interface TownFormProps {
     onSave: (name: string) => Promise<void>
     onCancel: () => void
-    isLoading?: boolean
     initialData?: { id: string; name: string } | null
 }
 
 export default function TownForm({
     onSave,
     onCancel,
-    isLoading = false,
     initialData = null
 }: TownFormProps) {
-    const [townName, setTownName] = useState("")
-
-    useEffect(() => {
-        if (initialData) {
-            setTownName(initialData.name)
-        }
-    }, [initialData])
-
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
-        if (townName.trim()) {
+        const formData = new FormData(e.currentTarget)
+        const townName = formData.get("townName") as string
+
+        if (townName?.trim()) {
             await onSave(townName.trim())
-            setTownName("")
         }
     }
 
@@ -42,11 +33,11 @@ export default function TownForm({
                     <div className="relative">
                         <input
                             type="text"
-                            value={townName}
-                            onChange={(e) => setTownName(e.target.value)}
+                            name="townName"
+                            defaultValue={initialData?.name || ""}
                             placeholder="Enter Town Name"
                             className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
-                            disabled={isLoading}
+                            required
                         />
                     </div>
                 </div>
@@ -63,7 +54,7 @@ export default function TownForm({
                         type="submit"
                         className="bg-black text-white hover:bg-gray-800 disabled:opacity-50"
                     >
-                        {isLoading ? "Saving..." : initialData ? "Update" : "Save"}
+                        {initialData ? "Update" : "Save"}
                     </Button>
                 </div>
             </form>

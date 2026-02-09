@@ -1,5 +1,6 @@
 "use server"
 import prisma from "@/lib/prisma"
+import { revalidatePath } from "next/cache"
 
 interface Data{
     name: string
@@ -28,6 +29,7 @@ export async function createCustomer(info:Data){
                 sector:true
             }
         })
+        revalidatePath('/pages/customer')
         return {success:true, data:customer}
     }catch(err){
         return {success:false, error:"Failed to create Customer"};
